@@ -1,0 +1,13 @@
+{
+  "name": "G-stock — Gestion de stock",
+  "short_name": "G-stock",
+  "description": "Gérez les produits, ventes et mouvements de votre boutique.",
+  "lang": "fr",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f8fb",
+  "theme_color": "#7358e8",
+  "icons": [
+    { "src": "/gstock.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
