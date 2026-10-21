@@ -59,7 +59,7 @@ function InventoryDialog({ products, onClose, onSave }: { products: Product[]; o
   const [counts, setCounts] = useState(() => Object.fromEntries(products.map((product) => [product.id, String(product.stock)])))
   const [isConfirming, setIsConfirming] = useState(false)
   const differences = products.map((product) => ({ product, quantity: Number(counts[product.id] ?? product.stock) - product.stock })).filter((item) => item.quantity !== 0)
-  const hasInvalidCount = products.some((product) => !Number.isInteger(Number(counts[product.id])) || Number(counts[product.id]) < 0)
+  const hasInvalidCount = products.some((product) => isInvalidCount(counts[product.id] ?? String(product.stock)))
   const handleValidate = () => {
     differences.forEach(({ product, quantity }) => onSave({ productId: product.id, type: quantity > 0 ? 'Entrée' : 'Sortie', reason: quantity > 0 ? 'Ajustement positif' : 'Ajustement négatif', quantity: Math.abs(quantity), unitPrice: product.cost, supplier: '' }))
     onClose()
@@ -77,4 +77,8 @@ function InventoryCounts({ products, counts, onChange, hasInvalidCount, onContin
 
 function InventoryConfirmation({ differences, onBack, onConfirm }: { differences: number; onBack: () => void; onConfirm: () => void }) {
   return <><p className="inventory-confirm-copy">{differences} produit(s) présentent un écart. Chaque correction sera inscrite au journal des mouvements.</p><div className="modal-actions"><Button variant="secondary" onClick={onBack}>Revoir le comptage</Button><Button onClick={onConfirm}>Enregistrer les ajustements</Button></div></>
+}
+
+function isInvalidCount(value: string): boolean {
+  return value.trim() === '' || !Number.isInteger(Number(value)) || Number(value) < 0
 }

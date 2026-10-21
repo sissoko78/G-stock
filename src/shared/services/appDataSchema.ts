@@ -28,7 +28,7 @@ export const appDataSchema = z.object({
 
 export const productFormSchema = z.object({
   id: z.string().optional(), name: z.string().trim().min(1, 'Saisissez le nom du produit.'),
-  sku: z.string().trim().min(1, 'Saisissez une référence.'), category: z.string().trim().default('Sans catégorie'),
+  sku: z.string().trim().min(1, 'Saisissez une référence.'), category: z.string().trim().transform((value) => value || 'Sans catégorie'),
   unit: z.string().min(1), cost: z.coerce.number().finite().nonnegative('Le coût ne peut pas être négatif.'),
   threshold: z.coerce.number().int().nonnegative('Le seuil doit être un nombre entier positif.'),
 })

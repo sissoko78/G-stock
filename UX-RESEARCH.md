@@ -1,6 +1,6 @@
 # Audit UX heuristique — G-stock
 
-Audit qualitatif de l’interface du 20 octobre 2026, fondé sur les écrans et interactions du dépôt. Les scores mesurent la facilité estimée sur 5 (5 = parcours direct, explicite et sans blocage). Ce ne sont pas des résultats d’entretiens ou de tests avec des utilisateurs.
+Audit qualitatif de l’interface du 21 octobre 2026, fondé sur les écrans et interactions du dépôt. Les scores mesurent la facilité estimée sur 5 (5 = parcours direct, explicite et sans blocage). Ce ne sont pas des résultats d’entretiens ou de tests avec des utilisateurs.
 
 ## Principes vérifiés et changements
 
