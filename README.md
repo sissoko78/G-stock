@@ -1,8 +1,8 @@
 # G-stock
 
-Application React responsive de gestion de stock destinée à une boutique ou une petite entreprise. L'interface est en français et la devise initiale est le FCFA.
+Application React de gestion de stock, conçue pour une petite boutique. L'interface est en français et la devise initiale est le FCFA.
 
-## Démarrage
+## Démarrage local
 
 Pré-requis : Node.js 20.19+ ou 22.12+.
 
@@ -11,45 +11,37 @@ npm install
 npm run dev
 ```
 
-Vite affiche l'adresse locale à ouvrir. `npm run build` prépare les fichiers statiques dans `dist/`, et `npm run preview` permet de les consulter localement.
+Vite affiche l’adresse à ouvrir dans le navigateur. Les scripts de contrôle sont `npm run typecheck`, `npm run lint` et `npm run build`. `npm run preview` sert le résultat compilé depuis `dist/`.
 
-## Fonctionnalités de la version actuelle
+## Organisation du code
 
-- Tableau de bord avec chiffre d'affaires, bénéfice brut, achats, valeur du stock, activité récente et alertes.
-- Catalogue produit avec catégories, coût d'achat, unité, seuil d'alerte, recherche, filtres, archivage et export CSV.
-- Entrées fournisseur et sorties (vente, perte, casse, vol, péremption, consommation et ajustements), avec blocage d'une sortie supérieure au stock.
-- Journal des mouvements, suivi des achats par fournisseur, inventaire physique avec contre-ajustements et rapports CSV.
-- Paramètres de boutique et sauvegarde/restauration JSON.
-- Manifeste et service worker pour l'installation de l'interface comme application web.
+Le projet utilise React, TypeScript strict, Zod pour valider les entrées et une architecture par fonctionnalité. Les règles d’équipe sont détaillées dans [CONVENTIONS.md](CONVENTIONS.md) et l’évaluation UX dans [UX-RESEARCH.md](UX-RESEARCH.md).
 
-Les données de cette version sont enregistrées dans `localStorage` du navigateur. Les données d'exemple sont créées au premier lancement. Utilisez **Paramètres** ou **Rapports → Sauvegarde complète** pour exporter une copie avant de changer de navigateur ou d'effacer ses données.
+```text
+src/
+├── features/       # tableaux de bord, inventaire, produits, mouvements, rapports…
+├── shared/         # composants UI, hooks, services, types et utilitaires communs
+├── styles/         # styles de base, application et adaptations UX
+├── App.tsx
+└── main.tsx
+```
 
-## Branchement Firebase prévu
+## Fonctions présentes
 
-La connexion Firebase n'est pas activée : le dépôt ne contient pas de projet Firebase ni ses paramètres d'environnement. L'écran Utilisateurs décrit les rôles prévus, mais cette version ne fournit pas d'authentification réelle, de synchronisation cloud, de stockage de pièces jointes, de fonctions de contre-écriture des mouvements, ni de reçus PDF. Les données locales de démonstration ne doivent pas être considérées comme une base multi-utilisateur ou un système d'audit inviolable.
+- Tableau de bord avec alertes de stock, ventes, achats, bénéfice brut et valeur immobilisée.
+- Catalogue avec validation des références, recherche, filtres, seuils, archivage et export CSV.
+- Entrées, ventes et sorties avec vérification du stock disponible.
+- Inventaire physique avec confirmation et génération de mouvements d’ajustement.
+- Journal horodaté, fournisseurs, rapports CSV, impression navigateur vers PDF et sauvegarde/restauration JSON validée.
+- Interface responsive, commandes clavier de recherche, messages de retour accessibles et pagination de 20 lignes.
+- Manifeste installable ; la mise en cache du shell ne fournit pas une synchronisation hors ligne des données.
 
-Pour activer cette partie :
+Les données sont enregistrées dans le `localStorage` du navigateur. Les anciennes données de démonstration réparties dans plusieurs clés sont migrées vers le nouveau format et validées avant utilisation. Téléchargez une sauvegarde avant de changer d’appareil ou de navigateur.
 
-1. Créez un projet Firebase avec Authentication (e-mail/mot de passe), Cloud Firestore et Hosting. Le cahier des charges requiert l'offre gratuite Spark.
-2. Ajoutez une application Web Firebase et copiez ses paramètres dans un fichier `.env.local` (ne commitez pas de clés privées).
-3. Intégrez Firebase Web SDK, migrez les opérations de mouvement vers des transactions Firestore, puis ajoutez la gestion de session et des rôles côté serveur via les règles.
-4. Déployez les règles Firestore et les règles Storage après revue et test avec l'émulateur Firebase. N'autorisez jamais le client à attribuer son propre rôle d'administrateur.
+## Limites et branchement Firebase
 
-### Modèle de données recommandé
+Firebase n’est pas configuré dans le dépôt. Les comptes, rôles sécurisés, synchronisation cloud, pièces jointes, ventes multi-lignes et reçus PDF ne sont donc pas actifs. Les exports CSV s’ouvrent dans un tableur ; l’impression PDF utilise la boîte de dialogue du navigateur.
 
-| Collection | Document / champs essentiels |
-|---|---|
-| `users/{uid}` | nom, e-mail, rôle, statut. Provisionnement de l'admin initial dans la console. |
-| `products/{productId}` | nom, référence, catégorie, unité, coût courant, seuil, quantité, archivage. |
-| `categories/{categoryId}` | nom, parentId nullable. |
-| `suppliers/{supplierId}` | nom, téléphone, e-mail, adresse. |
-| `movements/{movementId}` | produit, type, motif, quantité, prix saisi, coût snapshot, avant/après, horodatage, utilisateur, fournisseur, référence. |
-| `sales/{saleId}` | lignes, total, remise, règlement, horodatage et utilisateur. |
-| `inventories/{inventoryId}` | date, auteur, statut et lignes comptées avec quantités théoriques/physiques/écarts. |
-| `statistics/{periodId}` | cumuls journaliers/mensuels recalculés dans la même transaction que chaque mouvement. |
+Pour une mise en production multi-utilisateur, créez le projet Firebase (Authentication, Firestore, Storage et Hosting), provisionnez l’administrateur, ajoutez la configuration à l’environnement et remplacez le service local par des transactions Firestore. Les règles serveur doivent vérifier le rôle et protéger le stock, les mouvements et les cumuls statistiques dans une transaction. Ne faites jamais confiance à un rôle transmis par le navigateur.
 
-En production, chaque mouvement doit être ajouté sans supprimer son historique et sa création, la mise à jour du stock, le snapshot du coût et le cumul statistique doivent être atomiques. Une correction se fait par contre-écriture explicite. Les rôles et permissions doivent également être appliqués dans les règles Firestore, pas seulement masqués dans l'interface.
-
-## Exports et limites
-
-Les exports tabulaires sont des CSV UTF-8 compatibles avec les tableurs. Le cahier des charges demande aussi des fichiers Excel et PDF, une gestion de lots/péremption, des variantes, l'import CSV/Excel, des pièces jointes, des reçus, des filtres avancés, les permissions par rôle et une base Firestore transactionnelle ; ces éléments restent à implémenter après la configuration Firebase et la validation de la V1.
+Le modèle de collections et la suite des étapes de configuration restent dans le cahier des charges de `public/cahier-des-charges-gestion-stock.md`. L’offre gratuite Spark doit être vérifiée pour les services Firebase choisis avant déploiement.
