@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './styles/index.css'
 import App from './App'
 import { logger } from './shared/utils/logger'
+import './shared/services/firebase'
 
 const rootElement = document.getElementById('root')
 if (!rootElement) throw new Error('Root application element is missing.')
