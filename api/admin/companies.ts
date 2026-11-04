@@ -1,7 +1,7 @@
 import { FieldValue, Timestamp } from 'firebase-admin/firestore'
 import { z } from 'zod'
-import { errorResponse, jsonResponse } from '../_lib/apiResponse'
-import { getAdminAuth, getAdminFirestore, requireSuperAdmin } from '../_lib/firebaseAdmin'
+import { errorResponse, jsonResponse } from '../_lib/apiResponse.js'
+import { getAdminAuth, getAdminFirestore, requireSuperAdmin } from '../_lib/firebaseAdmin.js'
 
 const companyInput = z.object({
   companyName: z.string().trim().min(2).max(100),
