@@ -7,7 +7,7 @@ import { adminRequest } from './adminApi'
 import { useAdminCompanies } from './useAdminCompanies'
 import type { CompanySummary } from './adminApi'
 
-interface CompanyInput { companyName: string; ownerName: string; ownerEmail: string }
+interface CompanyInput { companyName: string; ownerName: string; ownerEmail: string; password: string }
 
 export function SuperAdminPage() {
   const { session, signOut } = useAuthSession()
@@ -36,17 +36,19 @@ function CompanyForm({ onCreate }: { onCreate: (input: CompanyInput) => Promise<
   const [companyName, setCompanyName] = useState('')
   const [ownerName, setOwnerName] = useState('')
   const [ownerEmail, setOwnerEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const submit = async (event: React.FormEvent<HTMLFormElement>) => submitCompany(event, { companyName, ownerName, ownerEmail }, onCreate, setIsSubmitting, () => { setCompanyName(''); setOwnerName(''); setOwnerEmail('') })
-  return <section className="panel admin-form-panel"><div className="panel-head"><div><h2>Nouvelle entreprise</h2><p>Le responsable recevra un lien pour définir son mot de passe.</p></div></div>
-    <form className="admin-form" onSubmit={(event) => void submit(event)}><CompanyFields companyName={companyName} ownerName={ownerName} ownerEmail={ownerEmail} setCompanyName={setCompanyName} setOwnerName={setOwnerName} setOwnerEmail={setOwnerEmail}/>
+  const submit = async (event: React.FormEvent<HTMLFormElement>) => submitCompany(event, { companyName, ownerName, ownerEmail, password }, onCreate, setIsSubmitting, () => { setCompanyName(''); setOwnerName(''); setOwnerEmail(''); setPassword('') })
+  return <section className="panel admin-form-panel"><div className="panel-head"><div><h2>Nouvelle entreprise</h2><p>Le responsable pourra se connecter avec le mot de passe initial défini ici.</p></div></div>
+    <form className="admin-form" onSubmit={(event) => void submit(event)}><CompanyFields companyName={companyName} ownerName={ownerName} ownerEmail={ownerEmail} password={password} setCompanyName={setCompanyName} setOwnerName={setOwnerName} setOwnerEmail={setOwnerEmail} setPassword={setPassword}/>
       <Button type="submit" disabled={isSubmitting}>{isSubmitting ? 'Création…' : 'Créer l’entreprise'}</Button></form></section>
 }
 
-function CompanyFields({ companyName, ownerName, ownerEmail, setCompanyName, setOwnerName, setOwnerEmail }: { companyName: string; ownerName: string; ownerEmail: string; setCompanyName: (value: string) => void; setOwnerName: (value: string) => void; setOwnerEmail: (value: string) => void }) {
+function CompanyFields({ companyName, ownerName, ownerEmail, password, setCompanyName, setOwnerName, setOwnerEmail, setPassword }: { companyName: string; ownerName: string; ownerEmail: string; password: string; setCompanyName: (value: string) => void; setOwnerName: (value: string) => void; setOwnerEmail: (value: string) => void; setPassword: (value: string) => void }) {
   return <><label className="form-field"><span>Nom de l’entreprise</span><input autoComplete="organization" minLength={2} maxLength={100} required value={companyName} onChange={(event) => setCompanyName(event.target.value)}/></label>
     <label className="form-field"><span>Nom du responsable</span><input autoComplete="name" minLength={2} maxLength={100} required value={ownerName} onChange={(event) => setOwnerName(event.target.value)}/></label>
-    <label className="form-field"><span>E-mail du responsable</span><input type="email" autoComplete="email" maxLength={254} required value={ownerEmail} onChange={(event) => setOwnerEmail(event.target.value)}/></label></>
+    <label className="form-field"><span>E-mail du responsable</span><input type="email" autoComplete="email" maxLength={254} required value={ownerEmail} onChange={(event) => setOwnerEmail(event.target.value)}/></label>
+    <label className="form-field"><span>Mot de passe initial</span><input type="password" autoComplete="new-password" minLength={8} maxLength={128} required value={password} onChange={(event) => setPassword(event.target.value)}/><small>8 caractères minimum. Le responsable pourra ensuite le modifier.</small></label></>
 }
 
 function CompanyList({ companies, isLoading, onRefresh, onResend }: { companies: CompanySummary[]; isLoading: boolean; onRefresh: () => Promise<void>; onResend: (email: string) => Promise<void> }) {
@@ -71,7 +73,7 @@ async function createCompany(session: ReturnType<typeof useAuthSession>['session
   try {
     const created = await adminRequest(session, 'POST', input)
     if (!created.ownerEmail) throw new Error('L’entreprise a été créée, mais l’adresse du responsable est absente.')
-    await sendAccessLink(created.ownerEmail, setNotice, setError)
+    setNotice(`Entreprise créée. Le compte ${created.ownerEmail} peut se connecter avec le mot de passe initial défini.`)
     await refresh()
   } catch (creationError) {
     setError(creationError instanceof Error ? creationError.message : 'Impossible de créer cette entreprise.')

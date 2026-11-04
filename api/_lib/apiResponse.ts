@@ -5,6 +5,17 @@ export function jsonResponse(body: unknown, status = 200): Response {
 export function errorResponse(error: unknown): Response {
   const message = error instanceof Error ? error.message : 'UNKNOWN_ERROR'
   const code = typeof error === 'object' && error !== null && 'code' in error ? String(error.code) : message
+  if (code === '7' || code === 'permission-denied') {
+    console.error('[api/admin/companies] Firestore permission denied')
+    return jsonResponse({ error: 'Le compte de service Firebase n’a pas les droits nécessaires sur Firestore.' }, 503)
+  }
+  if (code === '5' || code === 'not-found') {
+    console.error('[api/admin/companies] Firebase resource not found')
+    return jsonResponse({ error: 'La base Firestore configurée est introuvable dans le projet Firebase.' }, 503)
+  }
+  if (code !== 'auth/email-already-exists' && !code.startsWith('auth/') && message !== 'AUTH_REQUIRED' && message !== 'SUPER_ADMIN_REQUIRED' && message !== 'INVALID_REQUEST') {
+    console.error('[api/admin/companies] Unexpected server error', { code })
+  }
   if (code === 'auth/email-already-exists') {
     return jsonResponse({ error: 'Un compte existe déjà avec cette adresse e-mail.' }, 409)
   }

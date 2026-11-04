@@ -1,4 +1,3 @@
-import { randomBytes } from 'node:crypto'
 import { FieldValue, Timestamp } from 'firebase-admin/firestore'
 import { z } from 'zod'
 import { errorResponse, jsonResponse } from '../_lib/apiResponse'
@@ -8,6 +7,7 @@ const companyInput = z.object({
   companyName: z.string().trim().min(2).max(100),
   ownerName: z.string().trim().min(2).max(100),
   ownerEmail: z.string().trim().email().max(254).transform((email) => email.toLowerCase()),
+  password: z.string().min(8).max(128),
 })
 
 export async function GET(request: Request): Promise<Response> {
@@ -40,7 +40,7 @@ async function provisionCompany(input: z.infer<typeof companyInput>) {
   const auth = getAdminAuth()
   const database = getAdminFirestore()
   const companyRef = database.collection('companies').doc()
-  const owner = await auth.createUser({ email: input.ownerEmail, displayName: input.ownerName, password: randomBytes(48).toString('base64url') })
+  const owner = await auth.createUser({ email: input.ownerEmail, displayName: input.ownerName, password: input.password })
   try {
     await auth.setCustomUserClaims(owner.uid, { superAdmin: false, tenantId: companyRef.id, tenantRole: 'owner', companyName: input.companyName })
     await writeCompanyRecords(database, companyRef, owner.uid, input)
