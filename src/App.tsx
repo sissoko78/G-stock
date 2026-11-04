@@ -12,6 +12,9 @@ import { ToastRegion } from './shared/components/ui/ToastRegion'
 import { HelpDialog } from './shared/components/ui/HelpDialog'
 import { Icon, type IconName } from './shared/components/ui/Icon'
 import { formatDate } from './shared/utils/format'
+import { useAuthSession } from './features/auth/useAuthSession'
+import { SignInPage } from './features/auth/SignInPage'
+import { SuperAdminPage } from './features/auth/SuperAdminPage'
 
 const navigation: Array<{ title: string; section: string; icon: IconName }> = [
   { title: 'Tableau de bord', section: 'dashboard', icon: 'grid' },
@@ -25,18 +28,30 @@ const navigation: Array<{ title: string; section: string; icon: IconName }> = [
 const ReportsPage = lazy(() => import('./features/reports').then((feature) => ({ default: feature.ReportsPage })))
 
 export default function App() {
+  const auth = useAuthSession()
+  if (!auth.configured) return <SignInPage configError="Ajoute les variables VITE_FIREBASE_* à l’environnement de déploiement." />
+  if (auth.loading) return <main className="auth-screen"><p role="status">Vérification de la session…</p></main>
+  if (!auth.session) return <SignInPage configError={auth.error}/>
+  if (auth.session.isSuperAdmin) return <SuperAdminPage/>
+  if (!auth.session.tenantId || !auth.session.tenantRole) {
+    return <main className="auth-screen"><section className="auth-card"><h1>Accès non configuré</h1><p>Ce compte n’est associé à aucune entreprise. Contacte l’équipe G-stock.</p><button className="btn-secondary" onClick={() => void auth.signOut()}>Déconnexion</button></section></main>
+  }
+  return <InventoryApp tenantId={auth.session.tenantId} companyName={auth.session.companyName ?? 'Mon entreprise'} userName={auth.session.user.displayName ?? auth.session.user.email ?? 'Utilisateur'} onSignOut={auth.signOut}/>
+}
+
+function InventoryApp({ tenantId, companyName, userName, onSignOut }: { tenantId: string; companyName: string; userName: string; onSignOut: () => Promise<void> }) {
   const [page, setPage] = useState<PageId>('dashboard')
   const [mobileNav, setMobileNav] = useState(false)
   const [isHelpOpen, setIsHelpOpen] = useState(false)
   const [movementIntent, setMovementIntent] = useState<'Entrée' | 'Sortie' | null>(null)
-  const inventory = useAppData()
+  const inventory = useAppData(tenantId, companyName)
   const activeProducts = inventory.data.products.filter((product) => !product.archived)
   useKeyboardShortcuts()
   const handleNavigate = (nextPage: PageId) => { setPage(nextPage); setMobileNav(false) }
-  return <div className="app-shell"><Sidebar page={page} mobileNav={mobileNav} onNavigate={handleNavigate} onClose={() => setMobileNav(false)} onHelp={() => setIsHelpOpen(true)} products={activeProducts}/>
+  return <div className="app-shell"><Sidebar page={page} mobileNav={mobileNav} onNavigate={handleNavigate} onClose={() => setMobileNav(false)} onHelp={() => setIsHelpOpen(true)} products={activeProducts} companyName={companyName} userName={userName} onSignOut={onSignOut}/>
     <main className="main-area"><Topbar page={page} onMenu={() => setMobileNav((open) => !open)} onAlerts={() => handleNavigate('products')}/>
       <div className="page-content"><PageContent page={page} setPage={handleNavigate} inventory={inventory} products={activeProducts} movementIntent={movementIntent} onMovementIntentHandled={() => setMovementIntent(null)} onCreateMovement={(type) => { setMovementIntent(type); handleNavigate('movements') }}/></div>
-      <footer className="page-footer"><span>© {new Date().getFullYear()} {inventory.data.company.name} · G-stock</span><span>Gestion simple, stock maîtrisé.</span></footer>
+      <footer className="page-footer"><span>© {new Date().getFullYear()} {inventory.data.company.name} · G-stock</span><span>Stock enregistré sur cet appareil</span></footer>
     </main>{isHelpOpen && <HelpDialog onClose={() => setIsHelpOpen(false)} onNavigate={handleNavigate}/>}<ToastRegion messages={inventory.messages} onDismiss={inventory.dismiss}/>
   </div>
 }
@@ -53,12 +68,12 @@ function useKeyboardShortcuts(): void {
   }, [])
 }
 
-function Sidebar({ page, mobileNav, onNavigate, onClose, onHelp, products }: { page: PageId; mobileNav: boolean; onNavigate: (page: PageId) => void; onClose: () => void; onHelp: () => void; products: ReturnType<typeof useAppData>['data']['products'] }) {
+function Sidebar({ page, mobileNav, onNavigate, onClose, onHelp, products, companyName, userName, onSignOut }: { page: PageId; mobileNav: boolean; onNavigate: (page: PageId) => void; onClose: () => void; onHelp: () => void; products: ReturnType<typeof useAppData>['data']['products']; companyName: string; userName: string; onSignOut: () => Promise<void> }) {
   const lowStockCount = products.filter((product) => product.stock <= product.threshold).length
   return <><aside className={`sidebar ${mobileNav ? 'sidebar-open' : ''}`}><button className="brand" onClick={() => onNavigate('dashboard')}><span className="brand-mark"><Icon name="box" size={21}/></span><span className="brand-name">g<span>stock</span><small>GESTION DE STOCK</small></span></button>
-    <div className="store-card"><span className="store-icon">G</span><span className="store-details"><b>Point de vente</b><small>Votre boutique</small></span></div>
+    <div className="store-card"><span className="store-icon">{companyName.slice(0, 1).toUpperCase()}</span><span className="store-details"><b>{companyName}</b><small>Espace entreprise</small></span></div>
     <nav className="nav-list" aria-label="Navigation principale"><NavGroup title="PRINCIPAL" links={navigation.slice(0, 4)} page={page} onNavigate={onNavigate} alertCount={lowStockCount}/><NavGroup title="GESTION" links={navigation.slice(4)} page={page} onNavigate={onNavigate}/></nav>
-    <div className="sidebar-bottom"><button className="help-card" onClick={onHelp}><span className="help-icon">?</span><span><b>Besoin d'aide ?</b><small>Ouvrir le guide rapide</small></span><Icon name="arrow" size={16}/></button><div className="user-card"><div className="avatar">AT</div><div className="user-info"><b>Aminata Traoré</b><small>Profil local de démonstration</small></div></div></div></aside>
+    <div className="sidebar-bottom"><button className="help-card" onClick={onHelp}><span className="help-icon">?</span><span><b>Besoin d'aide ?</b><small>Ouvrir le guide rapide</small></span><Icon name="arrow" size={16}/></button><div className="user-card"><div className="avatar">{userName.slice(0, 2).toUpperCase()}</div><div className="user-info"><b>{userName}</b><small>Compte entreprise</small></div><button type="button" aria-label="Déconnexion" title="Déconnexion" onClick={() => void onSignOut()}>↪</button></div></div></aside>
     {mobileNav && <button className="nav-backdrop" aria-label="Fermer le menu" onClick={onClose}/>}</>
 }
 

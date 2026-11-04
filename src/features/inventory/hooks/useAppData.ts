@@ -4,18 +4,26 @@ import { DEMO_DATA } from '../services/demoData'
 import { readAppData, writeAppData } from '../../../shared/services/localStorageService'
 import { useToast } from '../../../shared/hooks/useToast'
 import { useCompanyActions, useMovementActions, useProductActions, useSupplierActions } from './useInventoryActions'
+import { APP_STORAGE_KEY } from '../../../shared/utils/constants'
 
-function hydrateData(): { data: AppData; canPersist: boolean; error?: string } {
-  const loaded = readAppData(DEMO_DATA)
-  return loaded.ok ? { data: loaded.value, canPersist: true } : { data: DEMO_DATA, canPersist: false, error: loaded.error.message }
+function emptyCompanyData(companyName: string): AppData {
+  return { products: [], suppliers: [], movements: [], company: { name: companyName, phone: '', currency: 'FCFA' } }
 }
 
-export function useAppData() {
-  const [initialData] = useState(hydrateData)
+function hydrateData(tenantId?: string, companyName?: string): { data: AppData; canPersist: boolean; error?: string } {
+  const storageKey = tenantId ? `${APP_STORAGE_KEY}:${tenantId}` : APP_STORAGE_KEY
+  const fallback = tenantId ? emptyCompanyData(companyName ?? 'Mon entreprise') : DEMO_DATA
+  const loaded = readAppData(fallback, storageKey, !tenantId)
+  return loaded.ok ? { data: loaded.value, canPersist: true } : { data: fallback, canPersist: false, error: loaded.error.message }
+}
+
+export function useAppData(tenantId?: string, companyName?: string) {
+  const storageKey = tenantId ? `${APP_STORAGE_KEY}:${tenantId}` : APP_STORAGE_KEY
+  const [initialData] = useState(() => hydrateData(tenantId, companyName))
   const [data, setData] = useState<AppData>(initialData.data)
   const [canPersist, setCanPersist] = useState(initialData.canPersist)
   const { messages, notify, dismiss } = useToast()
-  useEffect(() => persistData(data, canPersist, initialData.error, notify), [data, canPersist, initialData.error, notify])
+  useEffect(() => persistData(data, canPersist, initialData.error, notify, storageKey), [data, canPersist, initialData.error, notify, storageKey])
   const productActions = useProductActions(setData, notify)
   const movementActions = useMovementActions(data.products, setData, notify)
   const supplierActions = useSupplierActions(setData, notify)
@@ -24,9 +32,9 @@ export function useAppData() {
   return { data, messages, notify, dismiss, ...productActions, ...movementActions, ...supplierActions, ...companyActions, restoreData }
 }
 
-function persistData(data: AppData, canPersist: boolean, error: string | undefined, notify: ReturnType<typeof useToast>['notify']): void {
+function persistData(data: AppData, canPersist: boolean, error: string | undefined, notify: ReturnType<typeof useToast>['notify'], storageKey: string): void {
   if (!canPersist) { if (error) notify('error', error); return }
-  const result = writeAppData(data)
+  const result = writeAppData(data, storageKey)
   if (!result.ok) notify('error', result.error.message)
 }
 

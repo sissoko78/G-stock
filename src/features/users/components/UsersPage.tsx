@@ -1,4 +1,3 @@
-import { Button } from '../../../shared/components/ui/Button'
 import { Icon } from '../../../shared/components/ui/Icon'
 
 const roles = [
@@ -9,7 +8,7 @@ const roles = [
 ]
 
 export function UsersPage({ onInfo }: { onInfo: (message: string) => void }) {
-  return <><div className="page-heading"><div><div className="eyebrow">ACCÈS & ÉQUIPE</div><h1>Utilisateurs</h1><p>Préparez les rôles d'accès de votre équipe.</p></div><Button icon="plus" onClick={() => onInfo('Configurez Firebase Authentication pour activer les invitations.')}>Inviter un utilisateur</Button></div>
-    <section className="panel users-intro"><div className="users-illustration"><Icon name="users" size={32}/></div><div><h2>Authentification à configurer</h2><p>Les données restent locales sur cet appareil. Les comptes, invitations et permissions sécurisées nécessitent de relier un projet Firebase.</p><span className="status-chip"><i/> Configuration en attente</span></div></section>
-    <section className="panel data-panel"><div className="panel-head"><div><h2>Rôles prévus</h2><p>Profils d'accès définis dans le cahier des charges.</p></div></div><div className="role-list">{roles.map((role) => <div className="role-row" key={role.name}><span className="role-mark">{role.name.slice(0, 1)}</span><span><b>{role.name}</b><small>{role.detail}</small></span><span className="role-future">À configurer</span></div>)}</div></section></>
+  return <><div className="page-heading"><div><div className="eyebrow">ACCÈS & ÉQUIPE</div><h1>Utilisateurs</h1><p>Les collaborateurs seront gérés par le responsable de l’entreprise.</p></div></div>
+    <section className="panel users-intro"><div className="users-illustration"><Icon name="users" size={32}/></div><div><h2>Gestion d’équipe en préparation</h2><p>La connexion d’entreprise est active. L’ajout de collaborateurs et les permissions détaillées seront ouverts après le passage du stock dans Firestore.</p><span className="status-chip"><i/> Responsable d’entreprise</span></div></section>
+    <section className="panel data-panel"><div className="panel-head"><div><h2>Rôles prévus</h2><p>Les rôles définitifs seront appliqués dans les règles de sécurité côté serveur.</p></div></div><div className="role-list">{roles.map((role) => <div className="role-row" key={role.name}><span className="role-mark">{role.name.slice(0, 1)}</span><span><b>{role.name}</b><small>{role.detail}</small></span><span className="role-future">À venir</span></div>)}</div><button className="btn-secondary" onClick={() => onInfo('La gestion des membres sera activée après la synchronisation du stock avec Firestore.')}>Pourquoi cette étape ?</button></section></>
 }

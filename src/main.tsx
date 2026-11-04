@@ -2,13 +2,14 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './styles/index.css'
 import App from './App'
+import { AuthProvider } from './features/auth/AuthProvider'
 import { logger } from './shared/utils/logger'
 import './shared/services/firebase'
 
 const rootElement = document.getElementById('root')
 if (!rootElement) throw new Error('Root application element is missing.')
 
-createRoot(rootElement).render(<StrictMode><App/></StrictMode>)
+createRoot(rootElement).render(<StrictMode><AuthProvider><App/></AuthProvider></StrictMode>)
 
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch((error: unknown) => {

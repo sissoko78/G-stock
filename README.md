@@ -38,27 +38,26 @@ src/
 
 Les données sont enregistrées dans le `localStorage` du navigateur. Les anciennes données de démonstration réparties dans plusieurs clés sont migrées vers le nouveau format et validées avant utilisation. Téléchargez une sauvegarde avant de changer d’appareil ou de navigateur.
 
-## Limites et branchement Firebase
+## SaaS multi-entreprises
 
-Firebase n’est pas configuré dans le dépôt. Les comptes, rôles sécurisés, synchronisation cloud, pièces jointes, ventes multi-lignes et reçus PDF ne sont donc pas actifs. Les exports CSV s’ouvrent dans un tableur ; l’impression PDF utilise la boîte de dialogue du navigateur.
+L’application commence à passer d’un mode démonstration à un SaaS fermé : Firebase Authentication gère la connexion, une console réservée au super administrateur crée l’entreprise et son premier responsable, et `api/admin/companies.ts` exécute cette opération sur Vercel avec Firebase Admin. Les claims `superAdmin` et `tenantId` sont attribués côté serveur. `firestore.rules` refuse les accès entre entreprises ; le super administrateur ne peut lire que les métadonnées des entreprises.
 
-### Préparer Firebase Web
+**Le stock est encore enregistré dans le navigateur**, avec une clé locale distincte par entreprise. Il n’est pas encore synchronisé entre appareils ni entre les membres d’une entreprise. La gestion des rôles internes, les écritures de stock Firestore transactionnelles et la migration des sauvegardes locales restent à construire avant d’utiliser le SaaS pour des stocks réels.
 
-1. Dans [Firebase Console](https://console.firebase.google.com/), créez un projet, puis ajoutez une application Web depuis la page d’accueil du projet (icône `</>`). Le surnom est libre.
-2. Ouvrez **Paramètres du projet > Général > Vos applications > application Web > Configuration** et copiez les valeurs de l’objet `firebaseConfig`.
-3. Copiez `.env.example` vers `.env.local`, puis collez les valeurs correspondantes après `=`. Gardez les noms `VITE_FIREBASE_*` tels quels. Vite expose au navigateur toute variable préfixée `VITE_` : n’y mettez jamais de clé de compte de service, mot de passe, ou secret serveur.
-4. À la racine du dépôt, installez le SDK puis relancez Vite :
+### Préparer les comptes et le déploiement
 
-   ```sh
-   npm install firebase
-   npm run dev
+1. Dans Firebase Console, activez **Authentication > E-mail/Mot de passe** et créez la base sous **Firestore Database**. Ne sélectionnez pas les règles de test pour des données réelles.
+2. Dans **Paramètres du projet > Comptes de service**, créez une clé de compte de service réservée à l’application. Conservez le fichier JSON hors du dépôt ; il donne des droits privilégiés.
+3. Dans Vercel, ajoutez les six variables `VITE_FIREBASE_*` de `.env.local` aux environnements **Production**, **Preview** et **Development**. Ajoutez aussi `FIREBASE_SERVICE_ACCOUNT_JSON` comme variable secrète, avec le JSON complet du compte de service. Cette dernière variable ne doit jamais commencer par `VITE_` ni être placée dans le code navigateur.
+4. Dans **Authentication > Utilisateurs**, créez le compte qui servira de super administrateur. Configurez les modèles e-mail et ajoutez le domaine de production Vercel aux domaines autorisés.
+5. Depuis une machine de confiance, définissez `GOOGLE_APPLICATION_CREDENTIALS` sur le chemin du fichier JSON téléchargé et `FIREBASE_PROJECT_ID` sur l’identifiant du projet, puis attribuez le claim super administrateur :
+
+   ```powershell
+   $env:GOOGLE_APPLICATION_CREDENTIALS = 'C:\chemin-sécurisé\compte-service.json'
+   $env:FIREBASE_PROJECT_ID = 'identifiant-du-projet'
+   npm run bootstrap:super-admin -- admin@example.com
    ```
 
-   Le module `src/shared/services/firebase.ts` initialise l’application, Authentication et Firestore lorsque la configuration est complète. Sans `.env.local`, ces exports valent `null` et l’application locale continue de fonctionner.
-5. Dans la console, activez les produits nécessaires sous **Authentication > Commencer** et **Firestore Database > Créer une base de données**. Choisissez la région adaptée aux utilisateurs. Avant toute donnée réelle, définissez des règles Firestore qui imposent l’authentification et les droits par rôle ; ne laissez pas les règles de test ouvertes.
+6. Après avoir créé Firestore, déployez les règles avec Firebase CLI : `firebase deploy --only firestore:rules --project identifiant-du-projet`. Les futures modifications poussées sur le dépôt déclencheront ensuite les déploiements Vercel automatiques.
 
-La configuration Web (dont `apiKey`) identifie le projet et est destinée au client ; elle ne protège pas les données. La sécurité vient des règles Firestore et des contrôles d’accès. La configuration est ignorée par Git via `.env*`, à l’exception du modèle `.env.example`. La configuration Firebase seule ne migre pas encore les données locales vers le cloud : le service actuel reste `localStorage` jusqu’à l’implémentation de la synchronisation et des règles métier en transactions. Consultez le [guide officiel d’installation Firebase Web](https://firebase.google.com/docs/web/setup) et la [documentation sur les clés API Firebase](https://firebase.google.com/docs/projects/api-keys).
-
-Pour une mise en production multi-utilisateur, provisionnez l’administrateur et remplacez le service local par des transactions Firestore. Les règles serveur doivent vérifier le rôle et protéger le stock, les mouvements et les cumuls statistiques dans une transaction. Ne faites jamais confiance à un rôle transmis par le navigateur.
-
-Le modèle de collections et la suite des étapes de configuration restent dans le cahier des charges de `public/cahier-des-charges-gestion-stock.md`. L’offre gratuite Spark doit être vérifiée pour les services Firebase choisis avant déploiement.
+La configuration Web Firebase, y compris `apiKey`, est prévue pour le navigateur ; elle ne protège pas les données. La sécurité repose sur les règles Firestore, les claims définis par le serveur et la clé Admin gardée secrète. Consultez le [guide Firebase Web](https://firebase.google.com/docs/web/setup), les [règles Firestore](https://firebase.google.com/docs/firestore/security/rules-conditions) et la [référence Vercel Functions](https://vercel.com/docs/functions/runtimes/node-js).

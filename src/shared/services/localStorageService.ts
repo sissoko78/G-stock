@@ -6,10 +6,10 @@ import { StorageError } from '../utils/errors'
 import { logger } from '../utils/logger'
 import { APP_STORAGE_KEY, LEGACY_STORAGE_KEYS } from '../utils/constants'
 
-export const readAppData = (fallback: AppData): Result<AppData, StorageError> => {
+export const readAppData = (fallback: AppData, storageKey = APP_STORAGE_KEY, allowLegacy = true): Result<AppData, StorageError> => {
   try {
-    const stored = localStorage.getItem(APP_STORAGE_KEY)
-    if (!stored) return readLegacyData(fallback)
+    const stored = localStorage.getItem(storageKey)
+    if (!stored) return allowLegacy ? readLegacyData(fallback, storageKey) : success(fallback)
     const parsed: unknown = JSON.parse(stored)
     const validated = validateAppData(parsed)
     if (!validated.success) {
@@ -23,20 +23,20 @@ export const readAppData = (fallback: AppData): Result<AppData, StorageError> =>
   }
 }
 
-const readLegacyData = (fallback: AppData): Result<AppData, StorageError> => {
+const readLegacyData = (fallback: AppData, storageKey: string): Result<AppData, StorageError> => {
   const products = localStorage.getItem(LEGACY_STORAGE_KEYS.products)
   const movements = localStorage.getItem(LEGACY_STORAGE_KEYS.movements)
   const suppliers = localStorage.getItem(LEGACY_STORAGE_KEYS.suppliers)
   if (!products && !movements && !suppliers) return success(fallback)
   try {
-    return migrateLegacyData(fallback, products, movements, suppliers, localStorage.getItem(LEGACY_STORAGE_KEYS.company))
+    return migrateLegacyData(fallback, products, movements, suppliers, localStorage.getItem(LEGACY_STORAGE_KEYS.company), storageKey)
   } catch (error) {
     logger.error('Unable to migrate legacy browser data')
     return failure(new StorageError('Les anciennes données ne peuvent pas être lues. Gardez une copie avant de réinitialiser le navigateur.', { cause: error }))
   }
 }
 
-const migrateLegacyData = (fallback: AppData, products: string | null, movements: string | null, suppliers: string | null, company: string | null): Result<AppData, StorageError> => {
+const migrateLegacyData = (fallback: AppData, products: string | null, movements: string | null, suppliers: string | null, company: string | null, storageKey: string): Result<AppData, StorageError> => {
   const legacyProducts = z.array(productSchema).parse(products ? JSON.parse(products) as unknown : fallback.products)
   const legacyMovementSchema = movementSchema.extend({ costAtTime: z.number().optional() })
   const legacyMovements = z.array(legacyMovementSchema).parse(movements ? JSON.parse(movements) as unknown : fallback.movements)
@@ -46,21 +46,21 @@ const migrateLegacyData = (fallback: AppData, products: string | null, movements
     suppliers: z.array(supplierSchema).parse(suppliers ? JSON.parse(suppliers) as unknown : fallback.suppliers),
     company: companySchema.parse(company ? JSON.parse(company) as unknown : fallback.company),
   }
-  return storeMigratedData(data)
+  return storeMigratedData(data, storageKey)
 }
 
-const storeMigratedData = (data: unknown): Result<AppData, StorageError> => {
+const storeMigratedData = (data: unknown, storageKey: string): Result<AppData, StorageError> => {
   const migrated = validateAppData(data)
   if (!migrated.success) return failure(new StorageError('Les anciennes données sont incomplètes. Exportez-les depuis l’ancienne version avant de continuer.'))
-  const saved = writeAppData(migrated.data)
+  const saved = writeAppData(migrated.data, storageKey)
   return saved.ok ? success(migrated.data) : failure(saved.error)
 }
 
-export const writeAppData = (data: AppData): Result<void, StorageError> => {
+export const writeAppData = (data: AppData, storageKey = APP_STORAGE_KEY): Result<void, StorageError> => {
   try {
     const validated = validateAppData(data)
     if (!validated.success) return failure(new StorageError('Les données ne peuvent pas être enregistrées car elles sont invalides.'))
-    localStorage.setItem(APP_STORAGE_KEY, JSON.stringify(validated.data))
+    localStorage.setItem(storageKey, JSON.stringify(validated.data))
     return success(undefined)
   } catch (error) {
     logger.error('Unable to write application data')
