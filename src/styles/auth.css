@@ -22,6 +22,12 @@
 .admin-form .form-field input{width:100%;height:39px;border:1px solid #e4e7ee;border-radius:6px;padding:0 11px;color:#293146;font:inherit}
 .admin-form .form-field input:focus,.auth-form .form-field input:focus{outline:2px solid #7358e855;border-color:#7358e8}
 .auth-form .form-field input{width:100%;height:42px;border:1px solid #e4e7ee;border-radius:7px;padding:0 11px;color:#293146;font:inherit;margin-top:7px}
+.password-input{position:relative;display:block;width:100%;margin-top:7px}
+.admin-form .password-input{margin-top:0}
+.password-input input,.auth-form .form-field .password-input input{width:100%;margin-top:0;padding-right:42px}
+.password-input-toggle{position:absolute;top:50%;right:8px;display:grid;width:30px;height:30px;place-items:center;padding:0;transform:translateY(-50%);border:0;border-radius:5px;background:transparent;color:#72798a;cursor:pointer}
+.password-input-toggle:hover{background:#f1efff;color:#5945c7}
+.password-input-toggle:focus-visible{outline:2px solid #7358e8;outline-offset:1px}
 .admin-empty{margin:0;padding:28px 8px;text-align:center;color:#858c9e;font-size:12px}
 .company-list{display:grid}
 .company-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:12px;align-items:center;padding:14px 0;border-top:1px solid #eff0f3}

@@ -3,6 +3,7 @@ import { signInWithEmailAndPassword } from 'firebase/auth'
 import { firebaseAuth } from '../../shared/services/firebase'
 import { Field } from '../../shared/components/ui/Field'
 import { Button } from '../../shared/components/ui/Button'
+import { PasswordInput } from '../../shared/components/ui/PasswordInput'
 
 async function authenticate(email: string, password: string): Promise<string | null> {
   if (!firebaseAuth) return 'La connexion Firebase n’est pas configurée.'
@@ -30,7 +31,7 @@ function SignInForm({ disabled }: { disabled: boolean }) {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => submitCredentials(event, email, password, setError, setIsSubmitting)
   return <form className="auth-form" onSubmit={(event) => void handleSubmit(event)}>
     <Field label="Adresse e-mail"><input type="email" autoComplete="username" required value={email} onChange={(event) => setEmail(event.target.value)}/></Field>
-    <Field label="Mot de passe"><input type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)}/></Field>
+    <Field label="Mot de passe"><PasswordInput autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)}/></Field>
     {error && <div className="auth-alert" role="alert">{error}</div>}
     <Button type="submit" disabled={disabled || isSubmitting}>{isSubmitting ? 'Connexion…' : 'Se connecter'}</Button>
   </form>

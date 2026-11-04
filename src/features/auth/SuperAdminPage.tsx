@@ -5,6 +5,7 @@ import { Button } from '../../shared/components/ui/Button'
 import { useAuthSession } from './useAuthSession'
 import { adminRequest } from './adminApi'
 import { useAdminCompanies } from './useAdminCompanies'
+import { PasswordInput } from '../../shared/components/ui/PasswordInput'
 import type { CompanySummary } from './adminApi'
 
 interface CompanyInput { companyName: string; ownerName: string; ownerEmail: string; password: string }
@@ -48,7 +49,7 @@ function CompanyFields({ companyName, ownerName, ownerEmail, password, setCompan
   return <><label className="form-field"><span>Nom de l’entreprise</span><input autoComplete="organization" minLength={2} maxLength={100} required value={companyName} onChange={(event) => setCompanyName(event.target.value)}/></label>
     <label className="form-field"><span>Nom du responsable</span><input autoComplete="name" minLength={2} maxLength={100} required value={ownerName} onChange={(event) => setOwnerName(event.target.value)}/></label>
     <label className="form-field"><span>E-mail du responsable</span><input type="email" autoComplete="email" maxLength={254} required value={ownerEmail} onChange={(event) => setOwnerEmail(event.target.value)}/></label>
-    <label className="form-field"><span>Mot de passe initial</span><input type="password" autoComplete="new-password" minLength={8} maxLength={128} required value={password} onChange={(event) => setPassword(event.target.value)}/><small>8 caractères minimum. Le responsable pourra ensuite le modifier.</small></label></>
+    <label className="form-field"><span>Mot de passe initial</span><PasswordInput autoComplete="new-password" minLength={8} maxLength={128} required value={password} onChange={(event) => setPassword(event.target.value)}/><small>8 caractères minimum. Le responsable pourra ensuite le modifier.</small></label></>
 }
 
 function CompanyList({ companies, isLoading, onRefresh, onResend }: { companies: CompanySummary[]; isLoading: boolean; onRefresh: () => Promise<void>; onResend: (email: string) => Promise<void> }) {
