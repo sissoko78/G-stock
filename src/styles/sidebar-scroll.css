@@ -1,0 +1,22 @@
+.sidebar {
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-color: #d7dbe5 transparent;
+  scrollbar-width: thin;
+}
+
+.sidebar > *,
+.sidebar .nav-group,
+.sidebar .nav-link {
+  flex-shrink: 0;
+}
+
+.sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  border-radius: 6px;
+  background: #d7dbe5;
+}
