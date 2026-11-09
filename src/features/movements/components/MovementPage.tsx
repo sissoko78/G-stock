@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { Movement, Product, Supplier } from '../../../shared/types/domain'
 import type { MovementFormData } from '../../../shared/services/appDataSchema'
-import { formatDate, formatMoney, formatTime } from '../../../shared/utils/format'
+import { formatDate, formatMoney, formatTime, getInitials } from '../../../shared/utils/format'
 import { Button } from '../../../shared/components/ui/Button'
 import { Icon } from '../../../shared/components/ui/Icon'
 import { SearchBox } from '../../../shared/components/ui/SearchBox'
@@ -52,7 +52,7 @@ function MovementRow({ movement, products }: { movement: Movement; products: Pro
   return <tr><td><span className={`movement-tag ${movement.type === 'Entrée' ? 'entry' : 'exit'}`}><i />{movement.reason}</span></td>
     <td className="bold">{product?.name ?? 'Produit archivé'}</td><td><span className={`qty-label ${movement.type === 'Entrée' ? 'positive' : 'negative'}`}>{movement.type === 'Entrée' ? '+' : '−'}{movement.quantity}</span></td>
     <td>{formatMoney(movement.unitPrice)}</td><td className="numeric bold">{formatMoney(movement.quantity * movement.unitPrice)}</td>
-    <td>{formatDate(movement.date)}<small className="subcell">{formatTime(movement.date)}</small></td><td><span className="user-inline"><i>AT</i>{movement.user}</span></td></tr>
+    <td>{formatDate(movement.date)}<small className="subcell">{formatTime(movement.date)}</small></td><td><span className="user-inline"><i>{getInitials(movement.user)}</i>{movement.user}</span></td></tr>
 }
 
 function InventoryDialog({ products, onClose, onSave }: { products: Product[]; onClose: () => void; onSave: (data: MovementFormData) => boolean }) {

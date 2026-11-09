@@ -11,7 +11,7 @@ import { downloadCsv } from './shared/services/exportService'
 import { ToastRegion } from './shared/components/ui/ToastRegion'
 import { HelpDialog } from './shared/components/ui/HelpDialog'
 import { Icon, type IconName } from './shared/components/ui/Icon'
-import { formatDate } from './shared/utils/format'
+import { formatDate, getInitials } from './shared/utils/format'
 import { useAuthSession } from './features/auth/useAuthSession'
 import { SignInPage } from './features/auth/SignInPage'
 import { SuperAdminPage } from './features/auth/SuperAdminPage'
@@ -44,14 +44,14 @@ function InventoryApp({ tenantId, companyName, userName, onSignOut }: { tenantId
   const [mobileNav, setMobileNav] = useState(false)
   const [isHelpOpen, setIsHelpOpen] = useState(false)
   const [movementIntent, setMovementIntent] = useState<'Entrée' | 'Sortie' | null>(null)
-  const inventory = useAppData(tenantId, companyName)
+  const inventory = useAppData(tenantId, companyName, userName)
   const activeProducts = inventory.data.products.filter((product) => !product.archived)
   useKeyboardShortcuts()
   if (inventory.isLoading) return <main className="auth-screen"><p role="status">Chargement et synchronisation du stock…</p></main>
   const handleNavigate = (nextPage: PageId) => { setPage(nextPage); setMobileNav(false) }
   return <div className="app-shell"><Sidebar page={page} mobileNav={mobileNav} onNavigate={handleNavigate} onClose={() => setMobileNav(false)} onHelp={() => setIsHelpOpen(true)} products={activeProducts} companyName={companyName} userName={userName} onSignOut={onSignOut}/>
-    <main className="main-area"><Topbar page={page} onMenu={() => setMobileNav((open) => !open)} onAlerts={() => handleNavigate('products')}/>
-      <div className="page-content"><PageContent page={page} setPage={handleNavigate} inventory={inventory} products={activeProducts} movementIntent={movementIntent} onMovementIntentHandled={() => setMovementIntent(null)} onCreateMovement={(type) => { setMovementIntent(type); handleNavigate('movements') }}/></div>
+    <main className="main-area"><Topbar page={page} onMenu={() => setMobileNav((open) => !open)} onAlerts={() => handleNavigate('products')} userName={userName}/>
+      <div className="page-content"><PageContent page={page} setPage={handleNavigate} inventory={inventory} products={activeProducts} movementIntent={movementIntent} onMovementIntentHandled={() => setMovementIntent(null)} onCreateMovement={(type) => { setMovementIntent(type); handleNavigate('movements') }} userName={userName}/></div>
       <footer className="page-footer"><span>© {new Date().getFullYear()} {inventory.data.company.name} · G-stock</span><span>{getSyncLabel(inventory.syncStatus)}</span></footer>
     </main>{isHelpOpen && <HelpDialog onClose={() => setIsHelpOpen(false)} onNavigate={handleNavigate}/>}<ToastRegion messages={inventory.messages} onDismiss={inventory.dismiss}/>
   </div>
@@ -81,7 +81,7 @@ function Sidebar({ page, mobileNav, onNavigate, onClose, onHelp, products, compa
   return <><aside className={`sidebar ${mobileNav ? 'sidebar-open' : ''}`}><button className="brand" onClick={() => onNavigate('dashboard')}><span className="brand-mark"><Icon name="box" size={21}/></span><span className="brand-name">g<span>stock</span><small>GESTION DE STOCK</small></span></button>
     <div className="store-card"><span className="store-icon">{companyName.slice(0, 1).toUpperCase()}</span><span className="store-details"><b>{companyName}</b><small>Espace entreprise</small></span></div>
     <nav className="nav-list" aria-label="Navigation principale"><NavGroup title="PRINCIPAL" links={navigation.slice(0, 4)} page={page} onNavigate={onNavigate} alertCount={lowStockCount}/><NavGroup title="GESTION" links={navigation.slice(4)} page={page} onNavigate={onNavigate}/></nav>
-    <div className="sidebar-bottom"><button className="help-card" onClick={onHelp}><span className="help-icon">?</span><span><b>Besoin d'aide ?</b><small>Ouvrir le guide rapide</small></span><Icon name="arrow" size={16}/></button><div className="user-card"><div className="avatar">{userName.slice(0, 2).toUpperCase()}</div><div className="user-info"><b>{userName}</b><small>Compte entreprise</small></div><button type="button" aria-label="Déconnexion" title="Déconnexion" onClick={() => void onSignOut()}>↪</button></div></div></aside>
+    <div className="sidebar-bottom"><button className="help-card" onClick={onHelp}><span className="help-icon">?</span><span><b>Besoin d'aide ?</b><small>Ouvrir le guide rapide</small></span><Icon name="arrow" size={16}/></button><div className="user-card"><div className="avatar">{getInitials(userName)}</div><div className="user-info"><b>{userName}</b><small>Compte entreprise</small></div><button type="button" aria-label="Déconnexion" title="Déconnexion" onClick={() => void onSignOut()}>↪</button></div></div></aside>
     {mobileNav && <button className="nav-backdrop" aria-label="Fermer le menu" onClick={onClose}/>}</>
 }
 
@@ -89,14 +89,14 @@ function NavGroup({ title, links, page, onNavigate, alertCount = 0 }: { title: s
   return <div className="nav-group"><div className="nav-section">{title}</div>{links.map((item) => <button key={item.section} className={`nav-link ${page === item.section ? 'active' : ''}`} aria-current={page === item.section ? 'page' : undefined} onClick={() => onNavigate(item.section as PageId)}><Icon name={item.icon}/><span>{item.title}</span>{item.section === 'products' && alertCount > 0 && <i className="nav-count">{alertCount}</i>}</button>)}</div>
 }
 
-function Topbar({ page, onMenu, onAlerts }: { page: PageId; onMenu: () => void; onAlerts: () => void }) {
+function Topbar({ page, onMenu, onAlerts, userName }: { page: PageId; onMenu: () => void; onAlerts: () => void; userName: string }) {
   const title = navigation.find((item) => item.section === page)?.title ?? 'Tableau de bord'
   return <header className="topbar"><button className="mobile-menu" aria-label="Ouvrir le menu" onClick={onMenu}>☰</button><div className="breadcrumb">Pages <span>/</span> <b>{title}</b></div>
-    <div className="top-actions"><span className="today-label">{formatDate(new Date().toISOString())}</span><button className="icon-button notification" aria-label="Voir les alertes de stock" onClick={onAlerts}><Icon name="alert"/></button><div className="top-avatar">AT</div></div></header>
+    <div className="top-actions"><span className="today-label">{formatDate(new Date().toISOString())}</span><button className="icon-button notification" aria-label="Voir les alertes de stock" onClick={onAlerts}><Icon name="alert"/></button><div className="top-avatar">{getInitials(userName)}</div></div></header>
 }
 
-function PageContent({ page, setPage, inventory, products, movementIntent, onMovementIntentHandled, onCreateMovement }: { page: PageId; setPage: (page: PageId) => void; inventory: ReturnType<typeof useAppData>; products: ReturnType<typeof useAppData>['data']['products']; movementIntent: 'Entrée' | 'Sortie' | null; onMovementIntentHandled: () => void; onCreateMovement: (type: 'Entrée' | 'Sortie') => void }) {
-  if (page === 'dashboard') return <DashboardPage companyName={inventory.data.company.name} products={products} movements={inventory.data.movements} onNavigate={setPage} onCreateMovement={onCreateMovement}/>
+function PageContent({ page, setPage, inventory, products, movementIntent, onMovementIntentHandled, onCreateMovement, userName }: { page: PageId; setPage: (page: PageId) => void; inventory: ReturnType<typeof useAppData>; products: ReturnType<typeof useAppData>['data']['products']; movementIntent: 'Entrée' | 'Sortie' | null; onMovementIntentHandled: () => void; onCreateMovement: (type: 'Entrée' | 'Sortie') => void; userName: string }) {
+  if (page === 'dashboard') return <DashboardPage companyName={inventory.data.company.name} userName={userName} products={products} movements={inventory.data.movements} onNavigate={setPage} onCreateMovement={onCreateMovement}/>
   if (page === 'products') return <ProductPage products={products} onSave={inventory.addProduct} onArchive={inventory.archiveProduct} onExport={() => { downloadCsv([['Produit', 'Référence', 'Catégorie', 'Unité', 'Stock', 'Seuil', 'Coût unitaire', 'Valeur'], ...products.map((product) => [product.name, product.sku, product.category, product.unit, product.stock, product.threshold, product.cost, product.stock * product.cost])], 'etat-du-stock.csv'); inventory.notify('success', 'État du stock exporté au format CSV.') }}/>
   if (page === 'movements') return <MovementPage movements={inventory.data.movements} products={products} suppliers={inventory.data.suppliers} onSave={inventory.recordMovement} initialType={movementIntent} onInitialTypeHandled={onMovementIntentHandled}/>
   if (page === 'reports') return <Suspense fallback={<ReportSkeleton/>}><ReportsPage data={inventory.data} onRestore={inventory.restoreData} onError={(message) => inventory.notify('error', message)} onNotice={(message) => inventory.notify('success', message)}/></Suspense>

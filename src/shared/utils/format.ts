@@ -7,4 +7,7 @@ export const formatDate = (value: string): string =>
 export const formatTime = (value: string): string =>
   new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' }).format(new Date(value))
 
+export const getInitials = (name: string): string =>
+  name.trim().split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toLocaleUpperCase('fr') ?? '').join('')
+
 export const createId = (): string => crypto.randomUUID()

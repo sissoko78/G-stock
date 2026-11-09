@@ -21,14 +21,14 @@ export function useProductActions(setData: SetData, notify: Notify) {
   return { addProduct, archiveProduct }
 }
 
-export function useMovementActions(products: Product[], setData: SetData, notify: Notify) {
+export function useMovementActions(products: Product[], setData: SetData, notify: Notify, userName: string) {
   const recordMovement = useCallback((input: MovementFormData) => {
-    const result = createMovement(products, input, input.supplier)
+    const result = createMovement(products, input, input.supplier, userName)
     if (!result.ok) { notify('error', result.error.message); return false }
     setData((current) => ({ ...current, products: result.value.products, movements: [result.value.movement, ...current.movements] }))
     notify('success', input.type === 'Entrée' ? 'Entrée enregistrée. Le stock est à jour.' : 'Sortie enregistrée. Le stock est à jour.')
     return true
-  }, [notify, products, setData])
+  }, [notify, products, setData, userName])
   return { recordMovement }
 }
 

@@ -7,7 +7,7 @@ import { ValidationError } from '../../../shared/utils/errors'
 export interface MovementResult { products: Product[]; movement: Movement }
 
 export const createMovement = (
-  products: Product[], input: MovementFormData, supplier: string, now = new Date().toISOString(),
+  products: Product[], input: MovementFormData, supplier: string, userName: string, now = new Date().toISOString(),
 ): Result<MovementResult, ValidationError> => {
   const product = products.find((item) => item.id === input.productId)
   if (!product) return failure(new ValidationError('Ce produit est introuvable. Actualisez la page et réessayez.'))
@@ -17,7 +17,7 @@ export const createMovement = (
   }
   const movement: Movement = {
     ...input, id: createId(), quantity: input.quantity, supplier,
-    unitPrice: input.unitPrice, costAtTime: product.cost, date: now, user: 'Aminata Traoré',
+    unitPrice: input.unitPrice, costAtTime: product.cost, date: now, user: userName,
   }
   const nextProducts = products.map((item) => item.id !== product.id ? item : {
     ...item,

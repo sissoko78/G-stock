@@ -4,8 +4,8 @@ import { Button } from '../../../shared/components/ui/Button'
 import { Icon } from '../../../shared/components/ui/Icon'
 import { DASHBOARD_ALERT_LIMIT } from '../../../shared/utils/constants'
 
-interface Props { companyName: string; products: Product[]; movements: Movement[]; onNavigate: (page: 'products' | 'movements' | 'reports') => void; onCreateMovement: (type: 'Entrée' | 'Sortie') => void }
-export function DashboardPage({ companyName, products, movements, onNavigate, onCreateMovement }: Props) {
+interface Props { companyName: string; userName: string; products: Product[]; movements: Movement[]; onNavigate: (page: 'products' | 'movements' | 'reports') => void; onCreateMovement: (type: 'Entrée' | 'Sortie') => void }
+export function DashboardPage({ companyName, userName, products, movements, onNavigate, onCreateMovement }: Props) {
   const monthMovements = movements.filter(isCurrentMonth)
   const sales = monthMovements.filter((item) => item.reason === 'Vente')
   const purchases = monthMovements.filter((item) => item.reason === 'Achat fournisseur')
@@ -14,7 +14,7 @@ export function DashboardPage({ companyName, products, movements, onNavigate, on
   const profit = sales.reduce((total, item) => total + item.quantity * (item.unitPrice - item.costAtTime), 0)
   const stockValue = products.reduce((total, product) => total + product.stock * product.cost, 0)
   const lowStock = products.filter((product) => product.stock <= product.threshold)
-  return <><div className="page-heading"><div><div className="eyebrow">VUE D'ENSEMBLE</div><h1>Bonjour, Aminata 👋</h1><p>Voici la situation de {companyName} ce mois-ci.</p></div>
+  return <><div className="page-heading"><div><div className="eyebrow">VUE D'ENSEMBLE</div><h1>Bonjour, {userName.trim().split(/\s+/)[0]} 👋</h1><p>Voici la situation de {companyName} ce mois-ci.</p></div>
     <div className="heading-actions"><Button variant="secondary" onClick={() => onCreateMovement('Sortie')}>Enregistrer une vente</Button><Button icon="plus" onClick={() => onCreateMovement('Entrée')}>Nouvelle entrée</Button></div></div>
     <div className="stats-grid"><Metric icon="chart" tone="green" label="Chiffre d'affaires" value={formatMoney(revenue)} note="ventes ce mois-ci"/><Metric icon="swap" tone="violet" label="Bénéfice brut" value={formatMoney(profit)} note="ventes moins coût d'achat"/><Metric icon="box" tone="orange" label="Dépenses d'achat" value={formatMoney(expenses)} note="achats ce mois-ci"/><Metric icon="grid" tone="blue" label="Valeur du stock" value={formatMoney(stockValue)} note={`${products.length} produits actifs`}/></div>
     <div className="dashboard-grid"><section className="panel alerts-panel"><div className="panel-head"><div><h2>Alertes de stock</h2><p>Produits à réapprovisionner</p></div><span className="alert-count">{lowStock.length}</span></div>

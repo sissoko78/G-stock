@@ -12,10 +12,21 @@ function emptyCompanyData(companyName: string): AppData {
   return { products: [], suppliers: [], movements: [], company: { name: companyName, phone: '', currency: 'FCFA' } }
 }
 
-function hydrateData(tenantId: string, companyName: string): AppData {
+function hydrateData(tenantId: string, companyName: string, userName: string): AppData {
   const storageKey = `${APP_STORAGE_KEY}:${tenantId}`
   const loaded = readAppData(emptyCompanyData(companyName), storageKey, false)
-  return loaded.ok ? loaded.value : emptyCompanyData(companyName)
+  return loaded.ok ? normalizeMovementAuthors(loaded.value, userName) : emptyCompanyData(companyName)
+}
+
+function normalizeMovementAuthors(data: AppData, userName: string): AppData {
+  return {
+    ...data,
+    movements: data.movements.map((movement) =>
+      movement.user === 'Aminata Traoré' || movement.user === 'Aminata Traore'
+        ? { ...movement, user: userName }
+        : movement,
+    ),
+  }
 }
 
 function hasLocalInventory(data: AppData): boolean {
@@ -26,9 +37,9 @@ function isEmptyInventory(data: AppData): boolean {
   return !hasLocalInventory(data)
 }
 
-export function useAppData(tenantId: string, companyName: string) {
+export function useAppData(tenantId: string, companyName: string, userName: string) {
   const storageKey = `${APP_STORAGE_KEY}:${tenantId}`
-  const [data, setData] = useState<AppData>(() => hydrateData(tenantId, companyName))
+  const [data, setData] = useState<AppData>(() => hydrateData(tenantId, companyName, userName))
   const [canPersist, setCanPersist] = useState(true)
   const [isLoading, setIsLoading] = useState(true)
   const [syncStatus, setSyncStatus] = useState<CloudSyncStatus>('loading')
@@ -50,10 +61,11 @@ export function useAppData(tenantId: string, companyName: string) {
       serverResponded = true
       window.clearTimeout(offlineFallback)
       const localResult = readAppData(emptyCompanyData(companyName), storageKey, false)
-      const localData = localResult.ok ? localResult.value : emptyCompanyData(companyName)
+      const localData = localResult.ok ? normalizeMovementAuthors(localResult.value, userName) : emptyCompanyData(companyName)
+      const normalizedCloudData = normalizeMovementAuthors(cloudData, userName)
       // Recover stock created by an older, local-only app if another device
       // created an empty cloud record first.
-      const nextData = isEmptyInventory(cloudData) && hasLocalInventory(localData) ? localData : cloudData
+      const nextData = isEmptyInventory(normalizedCloudData) && hasLocalInventory(localData) ? localData : normalizedCloudData
       lastCloudData.current = JSON.stringify(cloudData)
       cloudReady.current = true
       setData(nextData)
@@ -65,7 +77,7 @@ export function useAppData(tenantId: string, companyName: string) {
       serverResponded = true
       window.clearTimeout(offlineFallback)
       const localResult = readAppData(emptyCompanyData(companyName), storageKey, false)
-      const localData = localResult.ok ? localResult.value : emptyCompanyData(companyName)
+      const localData = localResult.ok ? normalizeMovementAuthors(localResult.value, userName) : emptyCompanyData(companyName)
       lastCloudData.current = ''
       cloudReady.current = true
       setData(localData)
@@ -85,7 +97,7 @@ export function useAppData(tenantId: string, companyName: string) {
       window.clearTimeout(offlineFallback)
       unsubscribe()
     }
-  }, [tenantId, companyName, storageKey])
+  }, [tenantId, companyName, storageKey, userName])
 
   useEffect(() => {
     if (!canPersist) return
@@ -106,7 +118,7 @@ export function useAppData(tenantId: string, companyName: string) {
   }, [canPersist, data, notify, storageKey, tenantId])
 
   const productActions = useProductActions(setData, notify)
-  const movementActions = useMovementActions(data.products, setData, notify)
+  const movementActions = useMovementActions(data.products, setData, notify, userName)
   const supplierActions = useSupplierActions(setData, notify)
   const companyActions = useCompanyActions(setData, notify)
   const restoreData = (nextData: AppData) => {
