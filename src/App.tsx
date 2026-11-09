@@ -47,13 +47,21 @@ function InventoryApp({ tenantId, companyName, userName, onSignOut }: { tenantId
   const inventory = useAppData(tenantId, companyName)
   const activeProducts = inventory.data.products.filter((product) => !product.archived)
   useKeyboardShortcuts()
+  if (inventory.isLoading) return <main className="auth-screen"><p role="status">Chargement et synchronisation du stock…</p></main>
   const handleNavigate = (nextPage: PageId) => { setPage(nextPage); setMobileNav(false) }
   return <div className="app-shell"><Sidebar page={page} mobileNav={mobileNav} onNavigate={handleNavigate} onClose={() => setMobileNav(false)} onHelp={() => setIsHelpOpen(true)} products={activeProducts} companyName={companyName} userName={userName} onSignOut={onSignOut}/>
     <main className="main-area"><Topbar page={page} onMenu={() => setMobileNav((open) => !open)} onAlerts={() => handleNavigate('products')}/>
       <div className="page-content"><PageContent page={page} setPage={handleNavigate} inventory={inventory} products={activeProducts} movementIntent={movementIntent} onMovementIntentHandled={() => setMovementIntent(null)} onCreateMovement={(type) => { setMovementIntent(type); handleNavigate('movements') }}/></div>
-      <footer className="page-footer"><span>© {new Date().getFullYear()} {inventory.data.company.name} · G-stock</span><span>Stock enregistré sur cet appareil</span></footer>
+      <footer className="page-footer"><span>© {new Date().getFullYear()} {inventory.data.company.name} · G-stock</span><span>{getSyncLabel(inventory.syncStatus)}</span></footer>
     </main>{isHelpOpen && <HelpDialog onClose={() => setIsHelpOpen(false)} onNavigate={handleNavigate}/>}<ToastRegion messages={inventory.messages} onDismiss={inventory.dismiss}/>
   </div>
+}
+
+function getSyncLabel(status: ReturnType<typeof useAppData>['syncStatus']): string {
+  if (status === 'loading') return 'Chargement du stock…'
+  if (status === 'saving') return 'Synchronisation du stock…'
+  if (status === 'error') return 'Synchronisation indisponible · données gardées sur cet appareil'
+  return 'Stock synchronisé avec le cloud'
 }
 
 function useKeyboardShortcuts(): void {

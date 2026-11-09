@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent, type FormEvent } from 'react'
+﻿import { useState, type ChangeEvent, type FormEvent } from 'react'
 import type { AppData, Company } from '../../../shared/types/domain'
 import { companyFormSchema, type CompanyFormData } from '../../../shared/services/appDataSchema'
 import { exportBackup, restoreBackup } from '../../../shared/services/localStorageService'
@@ -23,7 +23,7 @@ export function SettingsPage({ data, onUpdate, onRestore, onError }: Props) {
         <Field label="Devise"><select value={form.currency} onChange={(event) => setForm({ ...form, currency: event.target.value })}><option>FCFA</option><option>EUR</option><option>USD</option></select></Field>
         {error && <p className="form-error" role="alert">{error}</p>}<Button type="submit">Enregistrer les paramètres</Button></form>
     </section><DataBackup data={data} onRestore={onRestore} onError={onError}/></div>
-    <section className="panel settings-panel firebase-panel"><div><span className="firebase-badge">STOCKAGE LOCAL</span><h2>Vos données restent dans ce navigateur</h2><p>Exportez une sauvegarde avant de changer d'appareil ou de navigateur. La synchronisation Firebase sera activée après configuration du projet.</p></div><span className="status-chip"><i/> Sauvegarde locale</span></section>
+    <section className="panel settings-panel firebase-panel"><div><span className="firebase-badge">SYNCHRONISATION CLOUD</span><h2>Vos données sont partagées entre vos appareils</h2><p>Les produits, fournisseurs, mouvements et paramètres de votre entreprise sont synchronisés avec Firebase. Une copie locale permet de consulter les données sur cet appareil.</p></div><span className="status-chip"><i/> Firebase Firestore</span></section>
   </>
 }
 
@@ -36,7 +36,7 @@ function DataBackup({ data, onRestore, onError }: { data: AppData; onRestore: (d
     onRestore(result.value)
   }
   return <section className="panel settings-panel"><div className="panel-head"><div><h2>Données et sauvegarde</h2><p>Créez une copie ou restaurez une sauvegarde G-stock.</p></div></div>
-    <div className="storage-notice"><Icon name="alert"/><p>Effacer les données de navigation peut supprimer votre stock. Gardez une sauvegarde JSON à jour.</p></div>
+    <div className="storage-notice"><Icon name="alert"/><p>Les données sont enregistrées dans Firestore. Gardez une sauvegarde JSON récente pour disposer d’une copie supplémentaire.</p></div>
     <Button variant="secondary" icon="download" onClick={() => exportBackup(data)}>Télécharger une sauvegarde</Button>
     <label className="btn-secondary restore-label">Restaurer une sauvegarde JSON<input type="file" accept="application/json,.json" onChange={handleRestore}/></label>
   </section>
