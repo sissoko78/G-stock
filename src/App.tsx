@@ -11,6 +11,7 @@ import { downloadCsv } from './shared/services/exportService'
 import { ToastRegion } from './shared/components/ui/ToastRegion'
 import { HelpDialog } from './shared/components/ui/HelpDialog'
 import { Icon, type IconName } from './shared/components/ui/Icon'
+import { LoadingScreen } from './shared/components/ui/LoadingScreen'
 import { formatDate, getInitials } from './shared/utils/format'
 import { useAuthSession } from './features/auth/useAuthSession'
 import { SignInPage } from './features/auth/SignInPage'
@@ -30,7 +31,7 @@ const ReportsPage = lazy(() => import('./features/reports').then((feature) => ({
 export default function App() {
   const auth = useAuthSession()
   if (!auth.configured) return <SignInPage configError="Ajoute les variables VITE_FIREBASE_* à l’environnement de déploiement." />
-  if (auth.loading) return <main className="auth-screen"><p role="status">Vérification de la session…</p></main>
+  if (auth.loading) return <LoadingScreen label="Vérification de la session…"/>
   if (!auth.session) return <SignInPage configError={auth.error}/>
   if (auth.session.isSuperAdmin) return <SuperAdminPage/>
   if (!auth.session.tenantId || !auth.session.tenantRole) {
@@ -47,7 +48,7 @@ function InventoryApp({ tenantId, companyName, userName, onSignOut }: { tenantId
   const inventory = useAppData(tenantId, companyName, userName)
   const activeProducts = inventory.data.products.filter((product) => !product.archived)
   useKeyboardShortcuts()
-  if (inventory.isLoading) return <main className="auth-screen"><p role="status">Chargement et synchronisation du stock…</p></main>
+  if (inventory.isLoading) return <LoadingScreen label="Synchronisation de votre stock…"/>
   const handleNavigate = (nextPage: PageId) => { setPage(nextPage); setMobileNav(false) }
   return <div className="app-shell"><Sidebar page={page} mobileNav={mobileNav} onNavigate={handleNavigate} onClose={() => setMobileNav(false)} onHelp={() => setIsHelpOpen(true)} products={activeProducts} companyName={companyName} userName={userName} onSignOut={onSignOut}/>
     <main className="main-area"><Topbar page={page} onMenu={() => setMobileNav((open) => !open)} onAlerts={() => handleNavigate('products')} userName={userName}/>
