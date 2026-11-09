@@ -40,6 +40,8 @@ Les données sont enregistrées dans le `localStorage` du navigateur. Les ancien
 
 ## SaaS multi-entreprises
 
+Le guide d’utilisation de l’espace entreprise se trouve dans [docs/guide-espace-entreprise.md](docs/guide-espace-entreprise.md).
+
 L’application commence à passer d’un mode démonstration à un SaaS fermé : Firebase Authentication gère la connexion, une console réservée au super administrateur crée l’entreprise et son premier responsable, et `api/admin/companies.ts` exécute cette opération sur Vercel avec Firebase Admin. Les claims `superAdmin` et `tenantId` sont attribués côté serveur. `firestore.rules` refuse les accès entre entreprises ; le super administrateur ne peut lire que les métadonnées des entreprises.
 
 **Le stock est encore enregistré dans le navigateur**, avec une clé locale distincte par entreprise. Il n’est pas encore synchronisé entre appareils ni entre les membres d’une entreprise. La gestion des rôles internes, les écritures de stock Firestore transactionnelles et la migration des sauvegardes locales restent à construire avant d’utiliser le SaaS pour des stocks réels.
