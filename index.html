@@ -20,6 +20,11 @@
   </head>
   <body>
     <div id="root"><main class="boot-screen" role="status" aria-label="Chargement de G-stock"><span class="boot-mark" aria-hidden="true">G</span><span class="boot-label">Chargement de votre espace…</span></main></div>
+    <script>
+      if ('serviceWorker' in navigator && location.protocol === 'https:') {
+        navigator.serviceWorker.register('/sw.js').catch(() => undefined)
+      }
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
