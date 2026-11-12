@@ -2,12 +2,16 @@ const CACHE = 'g-stock-shell-v3'
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE)
-    const response = await fetch('/')
-    if (!response.ok) throw new Error('Unable to precache the application shell.')
-    await cache.put('/', response.clone())
-    const html = await response.text()
-    const assets = [...html.matchAll(/(?:src|href)="([^"]+\/assets\/[^"]+)"/g)].map((match) => match[1])
-    await cache.addAll(['/manifest.webmanifest', '/gstock.svg', ...assets])
+    const previousCaches = (await caches.keys()).filter((name) => name !== CACHE)
+    for (const previousName of previousCaches) {
+      const previousCache = await caches.open(previousName)
+      for (const request of await previousCache.keys()) {
+        const path = new URL(request.url).pathname
+        if (request.mode !== 'navigate' && path !== '/' && !path.startsWith('/assets/') && path !== '/manifest.webmanifest' && path !== '/gstock.svg') continue
+        const response = await previousCache.match(request)
+        if (response) await cache.put(request, response)
+      }
+    }
   })())
   self.skipWaiting()
 })
