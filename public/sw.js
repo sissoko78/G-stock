@@ -1,6 +1,14 @@
-const CACHE = 'g-stock-shell-v2'
+const CACHE = 'g-stock-shell-v3'
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(['/', '/manifest.webmanifest', '/gstock.svg'])))
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE)
+    const response = await fetch('/')
+    if (!response.ok) throw new Error('Unable to precache the application shell.')
+    await cache.put('/', response.clone())
+    const html = await response.text()
+    const assets = [...html.matchAll(/(?:src|href)="([^"]+\/assets\/[^"]+)"/g)].map((match) => match[1])
+    await cache.addAll(['/manifest.webmanifest', '/gstock.svg', ...assets])
+  })())
   self.skipWaiting()
 })
 self.addEventListener('activate', (event) => {
@@ -10,8 +18,23 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET' || new URL(event.request.url).origin !== self.location.origin) return
   if (new URL(event.request.url).pathname.startsWith('/api/')) return
-  event.respondWith(fetch(event.request).then((response) => {
-    if (response.ok) { const copy = response.clone(); caches.open(CACHE).then((cache) => cache.put(event.request, copy)) }
-    return response
-  }).catch(() => caches.match(event.request).then((cached) => cached || (event.request.mode === 'navigate' ? caches.match('/') : undefined))))
+  event.respondWith((async () => {
+    const cache = await caches.open(CACHE)
+    const cached = await cache.match(event.request)
+    const isNavigation = event.request.mode === 'navigate'
+    const isBuildAsset = new URL(event.request.url).pathname.startsWith('/assets/')
+    if (isBuildAsset && cached) return cached
+
+    const controller = new AbortController()
+    const timeout = isNavigation ? setTimeout(() => controller.abort(), 2500) : undefined
+    try {
+      const response = await fetch(event.request, isNavigation ? { signal: controller.signal } : undefined)
+      if (timeout) clearTimeout(timeout)
+      if (response.ok) event.waitUntil(cache.put(event.request, response.clone()).catch(() => undefined))
+      return response
+    } catch {
+      if (timeout) clearTimeout(timeout)
+      return cached || (isNavigation ? await cache.match('/') : undefined) || Response.error()
+    }
+  })())
 })

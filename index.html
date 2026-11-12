@@ -4,13 +4,22 @@
     <meta charset="UTF-8" />
     <meta name="theme-color" content="#7358e8" />
     <meta name="description" content="G-stock, l'application simple pour suivre vos produits, vos ventes et votre stock." />
+    <style>
+      .boot-screen{min-height:100vh;display:grid;place-content:center;justify-items:center;gap:16px;background:linear-gradient(145deg,#f4f1ff,#f8f9fc 48%,#eff6f3);font:11px system-ui,sans-serif;color:#7e8493}
+      .boot-mark{position:relative;width:54px;height:54px;display:grid;place-items:center;border-radius:16px;background:#7358e8;color:#fff;font:800 23px system-ui,sans-serif;box-shadow:0 7px 18px #7358e833}
+      .boot-mark:before{content:"";position:absolute;inset:-7px;border:2px solid #7358e833;border-top-color:#7358e8;border-radius:50%;animation:boot-spin .85s linear infinite}
+      .boot-label{animation:boot-pulse 1.5s ease-in-out infinite}
+      @keyframes boot-spin{to{transform:rotate(360deg)}}
+      @keyframes boot-pulse{50%{opacity:.5}}
+      @media(prefers-reduced-motion:reduce){.boot-mark:before,.boot-label{animation:none}}
+    </style>
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" type="image/svg+xml" href="/gstock.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>G-stock — Gestion de stock</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root"><main class="boot-screen" role="status" aria-label="Chargement de G-stock"><span class="boot-mark" aria-hidden="true">G</span><span class="boot-label">Chargement de votre espace…</span></main></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
